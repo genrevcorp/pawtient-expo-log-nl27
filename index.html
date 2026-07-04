@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PawtientAI 寵物展情報蒐集手冊</title>
+<style>
+:root{--paper:#FEF9F1;--rose:#D47FA6;--rose-d:#a85683;--ink:#2a2320;--mut:#6f655e;--line:#e2d6cd;--card:#fffdfa;--accent:#c0392b;--ok:#00885A;--gold:#b8863a;}
+*{box-sizing:border-box;}
+body{font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);line-height:1.65;font-size:15px;margin:0;background:var(--paper);}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px;}
+h1{font-size:1.5em;color:var(--rose-d);margin:.2em 0 0;}
+h2{font-size:1.15em;color:#fff;background:var(--rose-d);border-radius:8px;padding:8px 14px;margin:1.8em 0 .6em;position:sticky;top:0;}
+h3{font-size:1.02em;margin:1em 0 .3em;color:var(--rose-d);border-left:4px solid var(--rose);padding-left:.5em;}
+p{margin:.4em 0;}
+strong{color:#120e0c;}
+.lead{background:#fff4ec;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:.8em 0;font-size:.95em;}
+.priority{display:inline-block;font-size:.7em;padding:2px 9px;border-radius:99px;color:#fff;margin-left:.4em;vertical-align:middle;}
+.p1{background:var(--accent);}
+.p2{background:var(--gold);}
+.p3{background:var(--ok);}
+ul.q{padding-left:0;list-style:none;margin:.4em 0;}
+ul.q li{margin:.4em 0;padding:8px 10px 8px 30px;background:var(--card);border:1px solid var(--line);border-radius:8px;position:relative;font-size:.93em;}
+ul.q li:before{content:"Q";position:absolute;left:9px;top:7px;color:#fff;background:var(--rose);width:16px;height:16px;border-radius:50%;font-size:.7em;text-align:center;line-height:16px;font-weight:700;}
+ul.chk{padding-left:0;list-style:none;}
+ul.chk li{margin:.35em 0;padding-left:26px;position:relative;font-size:.93em;}
+ul.chk li:before{content:"☐";position:absolute;left:0;color:var(--rose-d);font-size:1.1em;}
+.flag{border-radius:8px;padding:8px 12px;margin:.5em 0;font-size:.92em;}
+.green{background:#eef7f2;border-left:4px solid var(--ok);}
+.red{background:#fdf1ef;border-left:4px solid var(--accent);}
+table{border-collapse:collapse;width:100%;margin:.6em 0;font-size:.85em;}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+th{background:#f7e9e0;}
+.note{color:var(--mut);font-size:.82em;}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-size:.9em;line-height:1.9;}
+.toc a{color:var(--rose-d);text-decoration:none;}
+hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
+
+/* ---- 現場記錄表(手機可編輯) ---- */
+.log-summary{font-size:.95em;color:var(--rose-d);font-weight:700;margin:.4em 0 .8em;}
+#logCards{display:flex;flex-direction:column;gap:12px;}
+.log-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.log-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.log-card-num{font-weight:700;color:var(--rose-d);font-size:.95em;}
+.del-btn{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:5px 11px;font-size:.82em;}
+.del-btn:active{background:var(--accent);color:#fff;}
+.log-field{display:block;margin:.5em 0;font-size:.82em;color:var(--mut);font-weight:600;}
+.log-field input[type=text],.log-field select,.log-field textarea{
+  display:block;width:100%;margin-top:3px;padding:9px 10px;font-size:1em;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  font-family:inherit;box-sizing:border-box;
+}
+.log-field textarea{resize:vertical;min-height:2.4em;}
+.f-oem-group{margin:.6em 0 .3em;}
+.oem-toggle{display:flex;gap:8px;margin-top:4px;}
+.oem-btn{flex:1;padding:9px 0;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--mut);font-size:.92em;font-weight:600;}
+.oem-btn[data-val="是"].active{background:var(--ok);border-color:var(--ok);color:#fff;}
+.oem-btn[data-val="否"].active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.oem-btn[data-val="待談"].active{background:var(--gold);border-color:var(--gold);color:#fff;}
+.user-btn.active{background:var(--rose-d);border-color:var(--rose-d);color:#fff;}
+.log-btn{display:block;width:100%;padding:13px 0;border-radius:10px;border:none;font-size:1em;font-weight:700;margin-top:10px;}
+.log-btn.add{background:var(--rose);color:#fff;}
+.log-btn.add:active{background:var(--rose-d);}
+.log-actions{display:flex;gap:8px;margin-top:16px;}
+.log-actions .log-btn{margin-top:0;}
+.log-btn.copy{background:var(--rose-d);color:#fff;}
+.log-btn.clear{background:#fff;color:var(--accent);border:1px solid var(--accent);}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:.9em;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:99;}
+.log-empty{text-align:center;color:var(--mut);font-size:.9em;padding:20px 0;}
+</style></head>
+<body><div class="wrap">
+
+<h1>PawtientAI 寵物展情報蒐集手冊</h1>
+<p class="note">2026年7月 ｜ 現場實戰版 ｜ 手機開啟直接使用</p>
+
+<div class="lead">
+<strong>今天的三個任務優先順序:</strong><br>
+① <span class="priority p1">最急</span> 找 PawtientWatch 貼牌/OEM 廠——這是唯一有具體時間壓力的任務<br>
+② <span class="priority p2">次要</span> 掃描競品(寵物健康 App / 監測裝置)與保險攤位<br>
+③ <span class="priority p3">順便</span> 摸底獸醫器材、貓舍、中途/救援團體的現場生態
+</div>
+
+<div class="toc">
+<strong>快速跳轉</strong><br>
+<a href="#a">A. 智慧穿戴/感測硬體廠商</a><br>
+<a href="#b">B. 競品掃描(寵物健康 App/裝置)</a><br>
+<a href="#c">C. 寵物保險攤位</a><br>
+<a href="#d">D. 獸醫器材/診所軟體</a><br>
+<a href="#e">E. 貓舍/繁殖/血統協會</a><br>
+<a href="#f">F. 動物福利/中途救援團體</a><br>
+<a href="#filter">如何篩選值得停留的攤位</a><br>
+<a href="#general">通用觀察重點(每攤都適用)</a><br>
+<a href="#log">現場快速記錄表</a><br>
+<a href="#after">回來後怎麼整理</a>
+</div>
+
+<h2 id="a">A. 智慧穿戴/感測硬體廠商</h2>
+<p><span class="priority p1">最急</span> 這是今天唯一「非做不可」的任務——找 PawtientWatch 的貼牌/OEM 供應商,至少要談到兩家備援避免被單一供應商挾持。</p>
+
+<h3>該問的問題</h3>
+<ul class="q">
+<li>你們接不接受貼牌(OEM/ODM)?最小訂購量(MOQ)是多少?</li>
+<li>感測器規格有哪些?(心率、體溫、活動量、GPS、防水等級)</li>
+<li>電池續航多久?充電方式?</li>
+<li>有沒有 FCC/CE 或其他國際認證?有沒有做過寵物穿戴的相關驗證?</li>
+<li>資料傳輸協議是什麼?(藍牙/LoRa/WiFi)有沒有開放 API/SDK 給第三方 App 串接?</li>
+<li>打樣週期多久?打樣費用怎麼算?</li>
+<li>你們現在有沒有幫其他品牌貼牌的案例?方便看實品或參考嗎?</li>
+<li>量產單價區間?依數量級距怎麼變化?</li>
+<li>生產地在哪?交期大概多久?</li>
+<li>如果我們的硬體規格需要客製修改,你們內部有工程團隊還是純代工?</li>
+</ul>
+
+<h3>觀察重點</h3>
+<ul class="chk">
+<li>攤位有沒有實機可以摸/戴上去測試(只有型錄=warning sign)</li>
+<li>是否有中英雙語資料或海外參展紀錄(代表有外銷/量產實績)</li>
+<li>攤位站的人是業務還是工程師(工程師在場代表能立刻回答規格細節)</li>
+<li>是否展示其他品牌的貼牌成品(証明真的做過 OEM,不是只想接單試試看)</li>
+</ul>
+
+<h2 id="b">B. 競品掃描(寵物健康 App / 監測裝置)</h2>
+<p><span class="priority p2">次要</span> 保持低調觀察,不需要透露自己在做同類產品。重點是看別人怎麼定位、定價、展示。</p>
+<ul class="q">
+<li>(用消費者身分問)這個多少錢?月費還是買斷?</li>
+<li>這個可以記錄毛孩的病歷/血檢報告嗎?還是只有活動量/GPS?</li>
+<li>有沒有跟獸醫院或保險公司合作?</li>
+<li>資料可以匯出給獸醫看嗎?什麼格式?</li>
+</ul>
+<h3>觀察重點</h3>
+<ul class="chk">
+<li>攤位人流量與停留時間(消費者對哪個功能點頭最多次)</li>
+<li>定價策略是否公開陳列,還是要留資料才給報價</li>
+<li>展示的使用情境是「工具功能」還是「情感陪伴」(對照 PawtientAI 的差異化定位)</li>
+<li>是否鎖定慢性病/特定病種,還是泛用型記錄</li>
+</ul>
+
+<h2 id="c">C. 寵物保險攤位</h2>
+<p><span class="priority p2">次要</span> 若有保險公司或保經代設攤,這是驗證台灣市場現況的好機會(投保率 &lt;1% 的現場感受)。</p>
+<ul class="q">
+<li>現在主力賣的保單是什麼?保費區間大概多少?</li>
+<li>理賠申請大概要準備哪些資料?流程要多久?</li>
+<li>飼主最常見的疑慮或拒保原因是什麼?</li>
+<li>有沒有跟寵物 App 或健康紀錄工具合作的經驗?</li>
+</ul>
+
+<h2 id="d">D. 獸醫器材/診所軟體</h2>
+<p><span class="priority p3">順便</span> 了解獸醫院現在用什麼系統管理病歷,對數位工具的接受度。</p>
+<ul class="q">
+<li>診所現在用什麼系統記錄病歷?(紙本/自建系統/特定廠商 PMS)</li>
+<li>血檢/影像設備的報告可以直接匯出電子檔嗎?什麼格式?</li>
+<li>獸醫師對「飼主自己帶著病歷資料來看診」的接受度高嗎?</li>
+</ul>
+
+<h2 id="e">E. 貓舍/繁殖/血統協會</h2>
+<p><span class="priority p3">順便</span> 了解貓舍主的痛點與健康紀錄透明化的需求強度。</p>
+<ul class="q">
+<li>買家現在會要求看貓咪的健康紀錄或檢驗報告嗎?</li>
+<li>你們怎麼跟買家證明貓咪健康狀況?(紙本證明/獸醫證明/其他)</li>
+<li>如果有免費工具幫忙整理健康紀錄,會想用嗎?</li>
+</ul>
+
+<h2 id="f">F. 動物福利/中途救援團體</h2>
+<p><span class="priority p3">順便</span> 這條是公益通路,重點是了解他們實際的資源限制與需求,不是推銷。</p>
+<ul class="q">
+<li>現在怎麼追蹤中途貓咪的健康狀況?(手寫/Excel/其他工具)</li>
+<li>送養時怎麼跟領養人交代健康史?</li>
+<li>最缺的資源是什麼?(醫療費用/人力/系統工具)</li>
+</ul>
+
+<h2 id="filter">如何篩選值得停留的攤位</h2>
+<div class="flag green"><strong>值得停留的訊號:</strong>有實機可測試/demo、攤位有工程或技術背景的人、展示過去的貼牌或合作案例、有國際認證標章、資料透明(規格、價格願意公開討論)、有海外參展或外銷紀錄</div>
+<div class="flag red"><strong>可以跳過的訊號:</strong>只有型錄沒有實品、問規格細節答不出來只會轉介「回去問工程師」、單純代理轉售沒有工廠資訊、報價要一直留資料才給、攤位裝潢很大但產品資訊很空洞</div>
+<p class="note">現場時間有限,寧可少問幾攤但問深,不要每攤都蜻蜓點水拿名片就走。</p>
+
+<h2 id="general">通用觀察重點(每攤都適用)</h2>
+<ul class="chk">
+<li>陳列方式:有實機展示 vs 只有海報/型錄</li>
+<li>攤位人員背景:業務銷售導向 vs 技術/工程導向</li>
+<li>認證標章:CE / FCC / 國家標準 / 動物醫療器材相關認證</li>
+<li>資料完整度:名片、型錄是否有中英雙語(外銷能力信號)</li>
+<li>人潮熱度:駐足時間長短、是否有人當場下單/留資料</li>
+<li>定價透明度:是否大方公開報價區間</li>
+</ul>
+
+<h2 id="log">現場快速記錄表(手機可編輯)</h2>
+<p class="note">點「＋ 新增攤位」開一張卡片,填完自動存在<strong>這支手機裡</strong>(離線也不會遺失、關掉分頁再打開也還在)。Kono 跟 Sean 請先選自己的名字——兩人的記錄各存在自己手機,逛完各自點「複製全部記錄」貼到共同的 LINE 對話,就能合併。</p>
+
+<div class="log-field" style="margin-bottom:10px;">我是<div class="oem-toggle" id="userToggle">
+  <button type="button" class="oem-btn user-btn" data-user="Kono">Kono</button>
+  <button type="button" class="oem-btn user-btn" data-user="Sean">Sean</button>
+</div></div>
+
+<div class="log-summary" id="logSummary">已記錄 0 攤</div>
+<div id="logCards"></div>
+<div id="logEmpty" class="log-empty" style="display:none;">還沒有任何記錄,點下面「＋ 新增攤位」開始吧</div>
+
+<button id="addCardBtn" class="log-btn add" type="button">＋ 新增攤位</button>
+<div class="log-actions">
+<button id="copyBtn" class="log-btn copy" type="button">📋 複製全部記錄</button>
+<button id="clearBtn" class="log-btn clear" type="button">🗑 清空全部</button>
+</div>
+<div id="copyToast" class="toast" style="display:none;"></div>
+
+<script>
+(function(){
+  var STORE_KEY = "pawtientExpoLog_20260705";
+  var USER_KEY = "pawtientExpoUser_20260705";
+  var CATS = ["硬體OEM廠商","競品","保險","獸醫器材/軟體","貓舍/繁殖","中途/救援","其他"];
+  var cardsEl = document.getElementById("logCards");
+  var summaryEl = document.getElementById("logSummary");
+  var emptyEl = document.getElementById("logEmpty");
+  var toastEl = document.getElementById("copyToast");
+  var toastTimer = null;
+  var state = [];
+  var uid = 1;
+  var currentUser = localStorage.getItem(USER_KEY) || "";
+
+  function setUser(name){
+    currentUser = name;
+    localStorage.setItem(USER_KEY, name);
+    document.querySelectorAll(".user-btn").forEach(function(b){
+      b.classList.toggle("active", b.dataset.user === name);
+    });
+  }
+  document.querySelectorAll(".user-btn").forEach(function(b){
+    b.addEventListener("click", function(){ setUser(b.dataset.user); });
+  });
+  if(currentUser) setUser(currentUser);
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(raw){ state = JSON.parse(raw) || []; }
+    }catch(e){ state = []; }
+    if(state.length){
+      var maxId = 0;
+      state.forEach(function(e){ if(e.id > maxId) maxId = e.id; });
+      uid = maxId + 1;
+    }
+  }
+
+  function save(){
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    updateSummary();
+  }
+
+  function updateSummary(){
+    var filled = state.filter(function(e){ return (e.name||"").trim() !== ""; }).length;
+    summaryEl.textContent = "已記錄 " + filled + " 攤" + (state.length > filled ? "(含 " + (state.length - filled) + " 張空白卡)" : "");
+    emptyEl.style.display = state.length === 0 ? "block" : "none";
+  }
+
+  function renumber(){
+    var nums = cardsEl.querySelectorAll(".log-card-num");
+    nums.forEach(function(el, i){ el.textContent = "#" + (i+1); });
+  }
+
+  function buildCatOptions(selected){
+    var html = '<option value="">選擇類別</option>';
+    CATS.forEach(function(c){
+      html += '<option' + (c === selected ? " selected" : "") + '>' + c + '</option>';
+    });
+    return html;
+  }
+
+  function createCardEl(entry){
+    var card = document.createElement("div");
+    card.className = "log-card";
+    card.dataset.id = entry.id;
+    card.innerHTML =
+      '<div class="log-card-head"><span class="log-card-num">#</span><button type="button" class="del-btn">刪除</button></div>' +
+      '<label class="log-field">攤位名稱<input type="text" class="f-name" placeholder="例如:XX科技" value="' + escapeAttr(entry.name) + '"></label>' +
+      '<label class="log-field">類別<select class="f-cat">' + buildCatOptions(entry.cat) + '</select></label>' +
+      '<label class="log-field">一句話定位<input type="text" class="f-pos" placeholder="這攤在賣/做什麼" value="' + escapeAttr(entry.pos) + '"></label>' +
+      '<div class="f-oem-group"><span class="log-field" style="margin-bottom:0;">OEM可能性</span>' +
+        '<div class="oem-toggle">' +
+          '<button type="button" class="oem-btn" data-val="是">是</button>' +
+          '<button type="button" class="oem-btn" data-val="否">否</button>' +
+          '<button type="button" class="oem-btn" data-val="待談">待談</button>' +
+        '</div></div>' +
+      '<label class="log-field">聯絡方式<input type="text" class="f-contact" placeholder="電話/LINE/Email" value="' + escapeAttr(entry.contact) + '"></label>' +
+      '<label class="log-field">心得<textarea class="f-note" placeholder="值得記住的一句話">' + escapeHtml(entry.note) + '</textarea></label>';
+
+    card.querySelector(".f-name").addEventListener("input", function(e){ entry.name = e.target.value; save(); });
+    card.querySelector(".f-cat").addEventListener("change", function(e){ entry.cat = e.target.value; save(); });
+    card.querySelector(".f-pos").addEventListener("input", function(e){ entry.pos = e.target.value; save(); });
+    card.querySelector(".f-contact").addEventListener("input", function(e){ entry.contact = e.target.value; save(); });
+    card.querySelector(".f-note").addEventListener("input", function(e){ entry.note = e.target.value; save(); });
+
+    var oemBtns = card.querySelectorAll(".oem-btn");
+    oemBtns.forEach(function(btn){
+      if(btn.dataset.val === entry.oem) btn.classList.add("active");
+      btn.addEventListener("click", function(){
+        entry.oem = (entry.oem === btn.dataset.val) ? "" : btn.dataset.val;
+        oemBtns.forEach(function(b){ b.classList.toggle("active", b.dataset.val === entry.oem); });
+        save();
+      });
+    });
+
+    card.querySelector(".del-btn").addEventListener("click", function(){
+      if(state.length > 1 && !confirm("刪除這張攤位卡片?")) return;
+      var idx = state.indexOf(entry);
+      if(idx > -1) state.splice(idx, 1);
+      card.remove();
+      renumber();
+      save();
+    });
+
+    return card;
+  }
+
+  function escapeAttr(s){ return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+  function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function addCard(prefill){
+    var entry = Object.assign({id: uid++, name:"", cat:"", pos:"", oem:"", contact:"", note:""}, prefill||{});
+    state.push(entry);
+    cardsEl.appendChild(createCardEl(entry));
+    renumber();
+    save();
+    return entry;
+  }
+
+  function renderAll(){
+    cardsEl.innerHTML = "";
+    state.forEach(function(entry){ cardsEl.appendChild(createCardEl(entry)); });
+    renumber();
+    updateSummary();
+  }
+
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.style.display = "none"; }, 2000);
+  }
+
+  document.getElementById("addCardBtn").addEventListener("click", function(){ addCard(); });
+
+  document.getElementById("copyBtn").addEventListener("click", function(){
+    var filled = state.filter(function(e){ return (e.name||"").trim() !== ""; });
+    if(!filled.length){ showToast("目前沒有可複製的記錄"); return; }
+    var whoTag = currentUser ? "(" + currentUser + " 記錄)" : "";
+    var lines = ["【寵物展現場記錄】" + whoTag + " " + new Date().toLocaleDateString("zh-TW")];
+    filled.forEach(function(e, i){
+      lines.push((i+1) + ". 攤位:" + (e.name||"—") +
+        " ｜類別:" + (e.cat||"—") +
+        " ｜定位:" + (e.pos||"—") +
+        " ｜OEM可能性:" + (e.oem||"—") +
+        " ｜聯絡:" + (e.contact||"—") +
+        " ｜心得:" + (e.note||"—"));
+    });
+    var text = lines.join("\n");
+    var done = function(){ showToast("已複製全部記錄!"); };
+    var fail = function(){
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try{ document.execCommand("copy"); done(); }catch(e){ alert(text); }
+      document.body.removeChild(ta);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(fail);
+    } else { fail(); }
+  });
+
+  document.getElementById("clearBtn").addEventListener("click", function(){
+    if(!confirm("確定清空所有記錄?此動作無法復原。")) return;
+    state = [];
+    uid = 1;
+    localStorage.removeItem(STORE_KEY);
+    renderAll();
+    addCard();
+    showToast("已清空");
+  });
+
+  load();
+  if(state.length === 0){ addCard(); } else { renderAll(); }
+})();
+</script>
+
+<h2 id="after">回來後怎麼整理</h2>
+<ul class="chk">
+<li>把「OEM可能性=是」的廠商整理成候選清單,對照供應商議價力分析(至少留兩家備援)</li>
+<li>把競品觀察筆記跟 PawtientAI 核心決策框架的波特五力(新進入者威脅)做對照更新</li>
+<li>把貓舍/中途的現場回饋補進顧客描述(第三部)的實際驗證</li>
+<li>若有重大新發現(例如意外的強力競爭者、法規變化風向),提醒我更新到專案記憶</li>
+</ul>
+
+</div></body></html>
