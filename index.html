@@ -60,11 +60,19 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
 .log-btn.add{background:var(--rose);color:#fff;}
 .log-btn.add:active{background:var(--rose-d);}
 .log-actions{display:flex;gap:8px;margin-top:16px;}
-.log-actions .log-btn{margin-top:0;}
+.log-actions .log-btn{margin-top:0;flex:1;width:auto;}
 .log-btn.copy{background:var(--rose-d);color:#fff;}
-.log-btn.clear{background:#fff;color:var(--accent);border:1px solid var(--accent);}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:.9em;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:99;}
+.log-btn.export{background:var(--gold);color:#fff;}
+.log-btn.clear{background:#fff;color:var(--accent);border:1px solid var(--accent);font-size:.9em;padding:10px 0;}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:99px;font-size:.9em;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:99;max-width:85%;text-align:center;}
 .log-empty{text-align:center;color:var(--mut);font-size:.9em;padding:20px 0;}
+.photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}
+.photo-thumb{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--line);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb .photo-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.75em;line-height:20px;padding:0;}
+.photo-add-btn{background:#fff;border:1px dashed var(--rose);color:var(--rose-d);border-radius:8px;padding:8px 12px;font-size:.85em;margin:2px 0 4px;}
+.card-save-btn{background:var(--ok);color:#fff;border:none;border-radius:8px;padding:9px 0;width:100%;font-size:.92em;font-weight:700;margin-top:10px;}
+.log-card.saved-flash{box-shadow:0 0 0 3px var(--ok);transition:box-shadow .3s;}
 </style></head>
 <body><div class="wrap">
 
@@ -182,7 +190,7 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
 </ul>
 
 <h2 id="log">現場快速記錄表(手機可編輯)</h2>
-<p class="note">點「＋ 新增攤位」開一張卡片,填完自動存在<strong>這支手機裡</strong>(離線也不會遺失、關掉分頁再打開也還在)。Kono 跟 Sean 請先選自己的名字——兩人的記錄各存在自己手機,逛完各自點「複製全部記錄」貼到共同的 LINE 對話,就能合併。</p>
+<p class="note">點「＋ 新增攤位」開一張卡片,填完自動存在<strong>這支手機裡</strong>(離線也不會遺失、關掉分頁再打開也還在)。Kono 跟 Sean 請先選自己的名字——兩人的記錄各存在自己手機。每張卡片可以點📷加拍名片/規格表/產品照片,填完點💾儲存會有確認提示。逛完點「⬇️ 匯出檔案」下載整份記錄(含照片)傳給 Claude 分析,或點「📋 複製文字」貼到共同的 LINE 對話快速合併。</p>
 
 <div class="log-field" style="margin-bottom:10px;">我是<div class="oem-toggle" id="userToggle">
   <button type="button" class="oem-btn user-btn" data-user="Kono">Kono</button>
@@ -195,9 +203,10 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
 
 <button id="addCardBtn" class="log-btn add" type="button">＋ 新增攤位</button>
 <div class="log-actions">
-<button id="copyBtn" class="log-btn copy" type="button">📋 複製全部記錄</button>
-<button id="clearBtn" class="log-btn clear" type="button">🗑 清空全部</button>
+<button id="copyBtn" class="log-btn copy" type="button">📋 複製文字</button>
+<button id="exportBtn" class="log-btn export" type="button">⬇️ 匯出檔案</button>
 </div>
+<button id="clearBtn" class="log-btn clear" type="button">🗑 清空全部</button>
 <div id="copyToast" class="toast" style="display:none;"></div>
 
 <script>
@@ -239,8 +248,36 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
   }
 
   function save(){
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    }catch(e){
+      showToast("⚠️ 手機儲存空間不足,請先「⬇️ 匯出檔案」備份,再刪除較舊的照片");
+    }
     updateSummary();
+  }
+
+  function compressImage(file, maxDim, quality){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var w = img.width, h = img.height;
+          if(w > maxDim || h > maxDim){
+            if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = function(){ reject(new Error("圖片載入失敗")); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function(){ reject(new Error("讀取檔案失敗")); };
+      reader.readAsDataURL(file);
+    });
   }
 
   function updateSummary(){
@@ -278,13 +315,57 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
           '<button type="button" class="oem-btn" data-val="待談">待談</button>' +
         '</div></div>' +
       '<label class="log-field">聯絡方式<input type="text" class="f-contact" placeholder="電話/LINE/Email" value="' + escapeAttr(entry.contact) + '"></label>' +
-      '<label class="log-field">心得<textarea class="f-note" placeholder="值得記住的一句話">' + escapeHtml(entry.note) + '</textarea></label>';
+      '<label class="log-field">心得<textarea class="f-note" placeholder="值得記住的一句話">' + escapeHtml(entry.note) + '</textarea></label>' +
+      '<div class="log-field" style="margin-bottom:2px;">照片(名片/規格表/產品)</div>' +
+      '<div class="photo-grid"></div>' +
+      '<input type="file" accept="image/*" class="f-photo-input" style="display:none;">' +
+      '<button type="button" class="photo-add-btn">📷 新增照片</button>' +
+      '<button type="button" class="card-save-btn">💾 儲存這張卡片</button>';
 
     card.querySelector(".f-name").addEventListener("input", function(e){ entry.name = e.target.value; save(); });
     card.querySelector(".f-cat").addEventListener("change", function(e){ entry.cat = e.target.value; save(); });
     card.querySelector(".f-pos").addEventListener("input", function(e){ entry.pos = e.target.value; save(); });
     card.querySelector(".f-contact").addEventListener("input", function(e){ entry.contact = e.target.value; save(); });
     card.querySelector(".f-note").addEventListener("input", function(e){ entry.note = e.target.value; save(); });
+
+    var photoGrid = card.querySelector(".photo-grid");
+    var photoInput = card.querySelector(".f-photo-input");
+    function renderPhotos(){
+      photoGrid.innerHTML = "";
+      (entry.photos || []).forEach(function(src, idx){
+        var thumb = document.createElement("div");
+        thumb.className = "photo-thumb";
+        thumb.innerHTML = '<img src="' + src + '"><button type="button" class="photo-del">×</button>';
+        thumb.querySelector(".photo-del").addEventListener("click", function(){
+          entry.photos.splice(idx, 1);
+          save();
+          renderPhotos();
+        });
+        photoGrid.appendChild(thumb);
+      });
+    }
+    renderPhotos();
+    card.querySelector(".photo-add-btn").addEventListener("click", function(){ photoInput.click(); });
+    photoInput.addEventListener("change", function(e){
+      var file = e.target.files[0];
+      photoInput.value = "";
+      if(!file) return;
+      showToast("處理照片中…");
+      compressImage(file, 1000, 0.7).then(function(dataUrl){
+        entry.photos = entry.photos || [];
+        entry.photos.push(dataUrl);
+        save();
+        renderPhotos();
+        showToast("照片已加入 ✓");
+      }).catch(function(){ showToast("照片處理失敗,請再試一次"); });
+    });
+
+    card.querySelector(".card-save-btn").addEventListener("click", function(){
+      save();
+      card.classList.add("saved-flash");
+      setTimeout(function(){ card.classList.remove("saved-flash"); }, 700);
+      showToast("已儲存 ✓");
+    });
 
     var oemBtns = card.querySelectorAll(".oem-btn");
     oemBtns.forEach(function(btn){
@@ -312,7 +393,7 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
   function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
   function addCard(prefill){
-    var entry = Object.assign({id: uid++, name:"", cat:"", pos:"", oem:"", contact:"", note:""}, prefill||{});
+    var entry = Object.assign({id: uid++, name:"", cat:"", pos:"", oem:"", contact:"", note:"", photos:[]}, prefill||{});
     state.push(entry);
     cardsEl.appendChild(createCardEl(entry));
     renumber();
@@ -361,6 +442,23 @@ hr{border:none;border-top:1px dashed var(--line);margin:1.2em 0;}
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(text).then(done).catch(fail);
     } else { fail(); }
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var filled = state.filter(function(e){ return (e.name||"").trim() !== "" || (e.photos||[]).length; });
+    if(!filled.length){ showToast("目前沒有可匯出的記錄"); return; }
+    var payload = { exportedAt: new Date().toISOString(), user: currentUser || "未指定", entries: filled };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "pawtient-expo-log_" + dateStr + "_" + (currentUser || "user") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    showToast("匯出中,請查看下載或檔案 App");
   });
 
   document.getElementById("clearBtn").addEventListener("click", function(){
